@@ -13,6 +13,7 @@ This workspace contains the ROS 2 packages for controlling the SO-101 robot arm 
 ### 1. Build
 ```bash
 cd so101_ws
+rosdep update && rosdep install --from-paths src --ignore-src -r -y
 colcon build --symlink-install
 source install/setup.bash
 ```
