@@ -42,6 +42,41 @@ The driver natively reads LeRobot JSON calibration files.
 - **Default File**: `src/so101_moveit/config/calibration_default.json`. You should replace it with your lerobot follower calibration file (e.g. `~/.cache/huggingface/lerobot/calibration/robots/so101_follower/my_awesome_follower_arm.json`).
 - **Logic**: Maps raw motor values (0-4095) to URDF radian limits using `range_min` and `range_max`.
 
+## TODO
+
+### Servo Motion Smoothing (Feetech STS3215)
+
+The SO-101 uses Feetech STS3215 servos which produce jerky motion compared to industrial robot arms with harmonic drives or QDDs. Research shows several improvement strategies:
+
+#### Quick Wins (Parameter Tuning)
+- [ ] **Lower ACC value**: Change from `50` to `10-20` in `so101_system.cpp` for smoother acceleration/deceleration ramps
+- [ ] **Reduce Speed**: Change from `2400` to `800-1000` for slower but smoother motion
+- [ ] **Make ACC/Speed configurable**: Expose as ROS parameters instead of hardcoded values
+
+#### Advanced Improvements
+- [ ] **Use GOAL_TIME mode**: Send time duration instead of speed to the servos - ensures all joints arrive simultaneously regardless of travel distance
+- [ ] **Host-side trajectory interpolation**: Implement S-curve or cubic spline interpolation on the host to generate smooth intermediate waypoints at high frequency (200-500Hz)
+
+#### SDK Capabilities (Already Available)
+The Feetech SCServo SDK supports:
+| Parameter | Register | Function |
+|-----------|----------|----------|
+| ACC | 0x29 (41) | Acceleration value (0-254) for soft start/stop |
+| GOAL_POSITION | 0x2A-0x2B | Target position |
+| GOAL_TIME | 0x2C-0x2D | Target time to reach position (alternative to speed) |
+| GOAL_SPEED | 0x2E-0x2F | Maximum speed for movement |
+
+#### Hardware Limitations (Cannot Fix with Software)
+- Plastic gears → backlash causes micro-jitter at direction reversals
+- 12-bit encoder (4096 steps) → ~0.088° resolution, visible on fine movements
+- Trapezoidal profile only → no true S-curve in servo firmware
+- ~1kHz internal control loop → vs 10kHz+ on industrial arms
+
+#### Notes
+- Very low ACC values (e.g., ACC=2) can cause **overheating** during continuous motion
+- Recommended ACC range: **10-30** for balance of smoothness and thermal performance
+- Best possible improvement: host-side interpolation (~50-70% smoother)
+
 ## License
 This project follows the LeRobot license (Apache 2.0).
 
