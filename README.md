@@ -8,6 +8,63 @@ This workspace contains the ROS 2 packages for controlling the SO-101 robot arm 
 - **`so101_description`**: URDF description and meshes for the SO-101 robot.
 - **`so101_moveit`**: MoveIt 2 configuration and launch files.
 
+## Prerequisites: ROS 2 Humble on macOS (RoboStack)
+
+Since ROS 2 doesn't officially support macOS, we use [RoboStack](https://robostack.github.io/) to install ROS 2 Humble via conda/micromamba.
+
+### 1. Install Micromamba
+
+If you don't have micromamba installed:
+```bash
+# Install micromamba (recommended over conda for speed)
+"${SHELL}" <(curl -L micro.mamba.pm/install.sh)
+```
+
+### 2. Create ROS 2 Humble Environment
+
+**Important**: Use `--override-channels` to avoid conflicts with default Anaconda channels.
+
+```bash
+micromamba create -n ros_humble_env \
+  -c robostack-humble -c conda-forge \
+  --override-channels --strict-channel-priority \
+  ros-humble-desktop ros-humble-moveit-setup-assistant rosdep colcon-common-extensions -y
+```
+
+### 3. Configure Environment Channels
+
+Create an environment-specific `.condarc` to ensure `rosdep install` uses the correct channels:
+
+```bash
+cat > $(micromamba env list | grep ros_humble_env | awk '{print $NF}')/.condarc << 'EOF'
+channels:
+  - robostack-humble
+  - conda-forge
+channel_priority: strict
+EOF
+```
+
+### 4. Activate and Initialize
+
+```bash
+micromamba activate ros_humble_env
+
+# Initialize rosdep (only needed once)
+rosdep init
+rosdep update
+```
+
+### 5. Verify Installation
+
+```bash
+ros2 --version
+# Should output: ros2 0.x.x
+```
+
+> **Note for macOS**: Some packages like `warehouse_ros_mongo` are not available on macOS. This workspace uses `warehouse_ros_sqlite` as a drop-in replacement.
+
+---
+
 ## Getting Started
 
 ### 1. Build
